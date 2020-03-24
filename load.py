@@ -1,8 +1,8 @@
 import csv
 import file
 
-inputFile = '/home/rodrigo/Documents/Facudade/input/'
-outputFile = '/home/rodrigo/Documents/Facudade/output/'
+inputFile = '[path directory input]'
+outputFile = '[path directory out put zip]'
 
 print('Start proccess')
 

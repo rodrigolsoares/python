@@ -3,20 +3,37 @@ import datetime
 
 from pymongo import MongoClient
 
+#Change the parameters branch and commercialization
+branch = 1000
+commercialization = 'SALDO'
+queryCompare = 'estadoProduto.' + str(commercialization)
+
+
+#Do not change code below
 dataBaseName = 'catalogo'
 collectionNamePricing = 'precificacao'
 
-urlcurrentSynchronization = 'url mongo connect'
-urlnewSynchronization = 'url mongo connect'
+urlcurrentSynchronization = 'mongodb://usr_dev:XtjclH2L5Tep9bcHO8lb5s0x@mdbp-via-1.dc.nova:27017,mdbp-via-2.dc.nova:27017,mdbp-via-3.dc.nova:27017,mdbp-via-4.dc.nova:27017,mdbp-via-5.dc.nova:27017,mdbp-viamais1.dc.nova:27017,mdbp-viamais2.dc.nova:27017,mdbp-viamais3.dc.nova:27017,mdbp-viamais4.dc.nova:27017,mdbp-viamais5.dc.nova:27017/catalogo?replicaset=rsMULT&readPreference=secondaryPreferred&authSource=admin'
+urlnewSynchronization = 'mongodb://svc_sync:ZI7YPHc!Awg6@mdbp-sync-1.dc.nova:27017,mdbp-sync-2.dc.nova:27017,mdbp-sync-3.dc.nova:27017/catalogo?replicaset=rsSYNC&readPreference=secondaryPreferred&authSource=admin'
 
+filterCurrentSynchronization = {"_id.filial": branch, queryCompare : {"$exists": True} , queryCompare + ".comercializacao.codigo" : {"$ne": 99999999} }
+filterNewSynchronization = {"_id.filial": branch}
 
-filterCurrentSynchronization = {"_id.filial": 11, "estadoProduto.PADRAO": {"$exists": True} , "estadoProduto.PADRAO.comercializacao.codigo" : {"$ne": 99999999} }
-filterNewSynchronization = {"_id.filial": 11}
 
 def toCompareJson(oldJson, newJson):
-  return compareElementJson(oldJson, newJson, '_id') and compareElementJson(oldJson, newJson, 'estadoProduto') and compareElementJson(oldJson, newJson, 'precoCusto') and compareElementJson(oldJson, newJson, 'precoSugestao')
+  #return compareElementJson(oldJson, newJson, '_id') and compareElementJson(oldJson, newJson, 'estadoProduto') and compareElementJson(oldJson, newJson, 'precoCusto') and compareElementJson(oldJson, newJson, 'precoSugestao')
+  
+    if(oldJson.__contains__('estadoProduto')):
+        if(newJson.__contains__('estadoProduto')):
+            jsonCustomOld = oldJson['estadoProduto']
+            jsonCustomNew = newJson['estadoProduto']
+            return compareElementJson(jsonCustomOld, jsonCustomNew, commercialization) 
+        else:
+            return False
 
-    
+    return True
+
+
 def compareElementJson(oldJson, newJson, element):
     if(oldJson.__contains__(element)):
         if(newJson.__contains__(element)):
@@ -68,9 +85,9 @@ totalRecordsNotFound = 0
 divergent = 0
 correct = 0
 
-divergenceFile = open("./compare-result/divergenceFile.txt", "w")
-notFoundFile = open("./compare-result/notFoundFile.txt", "w")
-csvLoadFile = open("./compare-result/carga.csv", "w")
+divergenceFile = open("./compare-result/divergenceFile_" + str(commercialization) + '_' + str(branch) + ".txt", "w")
+notFoundFile = open("./compare-result/notFoundFile_"  + str(commercialization) + '_'  + str(branch) + ".txt", "w")
+csvLoadFile = open("./compare-result/load_" + str(commercialization) + '_'  + str(branch) + ".csv", "w")
 
 csvLoadFile.write('codigo-comercializacao;sku;tipoProduto;\n')
 
@@ -78,7 +95,7 @@ for key, jsonOld in oldSyncRecords.items():
     
     id = jsonOld['_id']
     estadoProduto = jsonOld['estadoProduto']
-    padrao = estadoProduto['PADRAO']
+    padrao = estadoProduto[commercialization]
     comercializacao = padrao['comercializacao']
     
     sku = id['sku']
@@ -108,10 +125,13 @@ divergenceFile.close()
 notFoundFile.close()  
 csvLoadFile.close() 
 
+
 print('----------------------------------------------------------------------------------------')
+print('- Branch: ' + str(branch) + ' Type: ' + commercialization)
 print('- Total records found between the two databases (Match): ' + str(totalRecordsFound))
 print('- Number of correct records between the two databases : ' + str(correct))
 print('- Number of divergent records between the two databases: ' + str(divergent))
 print('----------------------------------------------------------------------------------------')
 print('- Total records not found in new Sync (No Match): ' + str(totalRecordsNotFound))
 print('----------------------------------------------------------------------------------------')
+

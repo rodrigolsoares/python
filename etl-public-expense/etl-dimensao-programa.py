@@ -1,4 +1,5 @@
 import mySqlConn
+import listUtil
 import file
 import pandas as pd
 
@@ -15,31 +16,16 @@ for csvFilePath in csvFiles:
         break
 
     df=pd.read_csv(csvFilePath,delimiter=';' ,encoding='Windows-1252')
-    df = df[df['Código Órgão Superior'] >= 0]     
-    
+    df = df[df['Código Programa Orçamentário'] >= 0]     
     df = df[['Código Programa Orçamentário', 'Nome Programa Orçamentário', 'Código Ação', 'Nome Ação']]
-
     df = df.drop_duplicates()
-    
     values.append(list(df.itertuples(index=False,name=None)))
     
-
-	
-
-dfFilter = pd.DataFrame(values) 
-dfFilter = dfFilter.drop_duplicates()
-listaFiltrada = list(dfFilter.itertuples(index=False,name=None))
-
-out = []
-
-for tupleRecord in listaFiltrada:
-    for record in tupleRecord:
-        if(record != None ):
-            out.append(record)
+    
+out = listUtil.geraListaSemDuplicidade(values)
 
 cnx = mySqlConn.getConnection()
 cursor = cnx.cursor()
-
 
 query = '''INSERT INTO TBL_DIMENSAO_PROGRAMA (PK_PROGRAMA, CD_PROGRAMA_ORCAMENTARIO, NM_PROGRAMA_ORCAMENTARIO, CD_ACAO, NM_ACAO) 
                                       VALUES (0, %s, %s, %s, %s) '''

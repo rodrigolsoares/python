@@ -1,5 +1,6 @@
 import mySqlConn
 import file
+import listUtil
 import pandas as pd
 
 ano = 2019
@@ -58,6 +59,19 @@ print('Convert Lista de TBL_DIMENSAO_PROGRAMA em DataFrame')
 dfDimensaoPrograma = pd.DataFrame(listDimensaoPrograma) 
 dfDimensaoPrograma = dfDimensaoPrograma.drop_duplicates()
 
+dfOrcamento=pd.read_csv(pathAndFileOrcamento, delimiter=';', decimal= ',' ,encoding='Windows-1252')
+dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
+dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUBORDINADO': 'Código Órgão Subordinado'}, inplace=True)
+dfOrcamento.rename(columns={'CÓDIGO UNIDADE ORÇAMENTÁRIA': 'Código Unidade Orçamentária'}, inplace=True)
+dfOrcamento.rename(columns={'CÓDIGO PROGRAMA ORÇAMENTÁRIO': 'Código Programa Orçamentário'}, inplace=True)
+dfOrcamento.rename(columns={'CÓDIGO AÇÃO': 'Código Ação'}, inplace=True)
+dfOrcamento.rename(columns={'ORÇAMENTO REALIZADO (R$)': 'Orçamento Realizado (R$)'}, inplace=True)
+    
+dfOrcamento = dfOrcamento[['Código Órgão Superior', 'Código Órgão Subordinado','Código Unidade Orçamentária', 
+                           'Código Programa Orçamentário', 'Código Ação', 'Orçamento Realizado (R$)']]
+
+print('Create void dataFrame Pandas')
+values = list()
 
 print('Read csv files')
 csvFiles = file.searchFiles(pathFileDespesa)
@@ -66,59 +80,46 @@ for csvFilePath in csvFiles:
     if(csvFilePath.__contains__('2019_OrcamentoDespesa.zip.csv')):
         continue
     
-    dfDespesa=pd.read_csv(csvFilePath,delimiter=';' ,encoding='Windows-1252')
-
     mes = getMes(csvFilePath)
     keyTemp = getDimensaoTemporal(mes)
+
+    dfDespesa=pd.read_csv(csvFilePath,delimiter=';', decimal=',' ,encoding='Windows-1252')
+    
+    dfDespesa = dfDespesa[(dfDespesa['Código Programa Orçamentário'] >= 0) & (dfDespesa['Código Órgão Superior'] >= 0)]     
+
+    dfDespesa = dfDespesa[['Código Órgão Superior', 'Código Órgão Subordinado','Código Unidade Orçamentária', 
+                           'Código Programa Orçamentário', 'Código Ação', 'Valor Liquidado (R$)']]
+
     dfDespesa['ChaveDimensaoTemporal'] = keyTemp
  
     dfDespesa = pd.merge(dfDespesa, dfDimensaoPrograma, how='inner')
-    #dfDespesa = pd.merge(dfDespesa, dfDimensaoOrgao, how='inner')
+    dfDespesa = pd.merge(dfDespesa, dfDimensaoOrgao, how='inner')
 
-    print(dfDespesa)
 
-    dfOrcamento=pd.read_csv(pathAndFileOrcamento,delimiter=';' ,encoding='Windows-1252')
-    dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
-    dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
-    dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
-    dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
-    dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
-    dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
-    dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
+    resultMergeDF = pd.merge(dfOrcamento, dfDespesa, how='inner')
+    grouped_keys = resultMergeDF.groupby([resultMergeDF['ChaveDimensaoTemporal'], resultMergeDF['ChaveDimensaoPrograma'], resultMergeDF['ChaveDimensaoOrgao']])
+    resultDF  = grouped_keys.agg({'Orçamento Realizado (R$)' : sum, 'Valor Liquidado (R$)': sum}).reset_index()
     
+    resultDF['Orçamento Realizado (R$)'] = resultDF['Orçamento Realizado (R$)'].apply(lambda x: x / 12)
+    resultDF['Orçamento Realizado (R$)'] = resultDF['Orçamento Realizado (R$)'].apply(lambda x: round(x, 2))
+    resultDF['Valor Liquidado (R$)'] = resultDF['Valor Liquidado (R$)'].apply(lambda x: round(x, 2))
 
-    print(dfOrcamento)
-
-    resultDF = pd.merge(dfOrcamento, dfDespesa, how='inner')
-
-    print(resultDF)
-
-    break
+    values.append(list(resultDF.itertuples(index=False,name=None)))
 
 
-
-'''dfFilter = pd.DataFrame(values) 
-dfFilter = dfFilter.drop_duplicates()
-listaFiltrada = list(dfFilter.itertuples(index=False,name=None))
-
-out = []
-
-for tupleRecord in listaFiltrada:
-    for record in tupleRecord:
-        if(record != None ):
-            out.append(record)
+out = listUtil.geraLista(values)
 
 cnx = mySqlConn.getConnection()
-cursor = cnx.cursor()'''
+cursor = cnx.cursor()
 
 
-#query = '''INSERT INTO TBL_FATO (FK_ORGAO, FK_PROGRAMA, FK_TEMPORAL, VLR_ORCADO, VLR_LIQUIDADO) 
-#                         VALUES (%s, %s, %s, %s, %s)'''
+query = '''INSERT INTO TBL_FATO (FK_TEMPORAL, FK_PROGRAMA, FK_ORGAO, VLR_ORCADO, VLR_LIQUIDADO) 
+                         VALUES (%s, %s, %s, %s, %s)'''
 
-#cursor.executemany(query, out)
-#cnx.commit() 
+cursor.executemany(query, out)
+cnx.commit() 
 
-#print(cursor.rowcount, "linha(s) inserida(s)")
+print(cursor.rowcount, "linha(s) inserida(s)")
 
 
 

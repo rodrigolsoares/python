@@ -3,7 +3,7 @@ import file
 import listUtil
 import pandas as pd
 
-pathFile = '/home/rodrigo/Documents/university/data-manage-and-information/trabalho etl pandas/output/'
+pathFile = '/home/rodrigo/Documents/university/data-manage-and-information/trabalho etl pandas/csvFile/'
 
 print('Create void dataFrame Pandas')
 values = list()
@@ -13,7 +13,7 @@ csvFiles = file.searchFiles(pathFile)
 for csvFilePath in csvFiles:
 
     if(csvFilePath.__contains__('2019_OrcamentoDespesa.zip.csv')):
-        break
+        continue
 
     df=pd.read_csv(csvFilePath,delimiter=';' ,encoding='Windows-1252')
     

@@ -21,6 +21,13 @@ def getDimensaoPrograma():
     cursor.execute(query)
     return  cursor.fetchall()
 
+def getDimensaoAreaAtuacao():
+    cnx = mySqlConn.getConnection()
+    cursor = cnx.cursor()
+    query = 'SELECT PK_AREA_ATUACAO, CD_FUNCAO, NM_FUNCAO, CD_SUBFUNCAO, NM_SUBFUNCAO FROM TBL_DIMENSAO_AREA_ATUACAO'
+    cursor.execute(query)
+    return  cursor.fetchall()
+
 def getDimensaoTemporal(param):
     mes = 0
     cnx = mySqlConn.getConnection()
@@ -57,7 +64,16 @@ for result in getDimensaoPrograma():
 
 print('Convert Lista de TBL_DIMENSAO_PROGRAMA em DataFrame')
 dfDimensaoPrograma = pd.DataFrame(listDimensaoPrograma) 
-dfDimensaoPrograma = dfDimensaoPrograma.drop_duplicates()
+
+print('Montando Lista de TBL_DIMENSAO_AREA_ATUACAO')
+listDimensaoAtucacao = []
+for result in getDimensaoAreaAtuacao():
+     listDimensaoAtucacao.append({'ChaveDimensaoAtuacao': result[0], 'Código Função': result[1], 'Nome Função': result[2], 'Código Subfução': result[3], 'Nome Subfunção': result[3]})
+
+print('Convert Lista de TBL_DIMENSAO_AREA_ATUACAO em DataFrame')
+dfDimensaoAtuacao = pd.DataFrame(listDimensaoAtucacao) 
+
+
 
 dfOrcamento=pd.read_csv(pathAndFileOrcamento, delimiter=';', decimal= ',' ,encoding='Windows-1252')
 dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUPERIOR': 'Código Órgão Superior'}, inplace=True)
@@ -65,10 +81,13 @@ dfOrcamento.rename(columns={'CÓDIGO ÓRGÃO SUBORDINADO': 'Código Órgão Subo
 dfOrcamento.rename(columns={'CÓDIGO UNIDADE ORÇAMENTÁRIA': 'Código Unidade Orçamentária'}, inplace=True)
 dfOrcamento.rename(columns={'CÓDIGO PROGRAMA ORÇAMENTÁRIO': 'Código Programa Orçamentário'}, inplace=True)
 dfOrcamento.rename(columns={'CÓDIGO AÇÃO': 'Código Ação'}, inplace=True)
+dfOrcamento.rename(columns={'CÓDIGO SUBFUNÇÃO': 'Código Subfução'}, inplace=True)
+dfOrcamento.rename(columns={'CÓDIGO FUNÇÃO': 'Código Função'}, inplace=True)
 dfOrcamento.rename(columns={'ORÇAMENTO REALIZADO (R$)': 'Orçamento Realizado (R$)'}, inplace=True)
     
 dfOrcamento = dfOrcamento[['Código Órgão Superior', 'Código Órgão Subordinado','Código Unidade Orçamentária', 
-                           'Código Programa Orçamentário', 'Código Ação', 'Orçamento Realizado (R$)']]
+                           'Código Programa Orçamentário', 'Código Ação', 'Código Função', 'Código Subfução', 
+                           'Orçamento Realizado (R$)']]
 
 print('Create void dataFrame Pandas')
 values = list()
@@ -88,16 +107,20 @@ for csvFilePath in csvFiles:
     dfDespesa = dfDespesa[(dfDespesa['Código Programa Orçamentário'] >= 0) & (dfDespesa['Código Órgão Superior'] >= 0)]     
 
     dfDespesa = dfDespesa[['Código Órgão Superior', 'Código Órgão Subordinado','Código Unidade Orçamentária', 
-                           'Código Programa Orçamentário', 'Código Ação', 'Valor Liquidado (R$)']]
+                           'Código Programa Orçamentário', 'Código Ação', 'Código Função', 'Código Subfução', 
+                           'Valor Liquidado (R$)']]
 
     dfDespesa['ChaveDimensaoTemporal'] = keyTemp
  
     dfDespesa = pd.merge(dfDespesa, dfDimensaoPrograma, how='inner')
     dfDespesa = pd.merge(dfDespesa, dfDimensaoOrgao, how='inner')
+    dfDespesa = pd.merge(dfDespesa, dfDimensaoAtuacao, how='inner')
 
 
     resultMergeDF = pd.merge(dfOrcamento, dfDespesa, how='inner')
-    grouped_keys = resultMergeDF.groupby([resultMergeDF['ChaveDimensaoTemporal'], resultMergeDF['ChaveDimensaoPrograma'], resultMergeDF['ChaveDimensaoOrgao']])
+    grouped_keys = resultMergeDF.groupby([resultMergeDF['ChaveDimensaoTemporal'], resultMergeDF['ChaveDimensaoPrograma'], 
+                                          resultMergeDF['ChaveDimensaoOrgao'], resultMergeDF['ChaveDimensaoAtuacao'] ])
+                                          
     resultDF  = grouped_keys.agg({'Orçamento Realizado (R$)' : sum, 'Valor Liquidado (R$)': sum}).reset_index()
     
     resultDF['Orçamento Realizado (R$)'] = resultDF['Orçamento Realizado (R$)'].apply(lambda x: x / 12)
@@ -113,8 +136,8 @@ cnx = mySqlConn.getConnection()
 cursor = cnx.cursor()
 
 
-query = '''INSERT INTO TBL_FATO (FK_TEMPORAL, FK_PROGRAMA, FK_ORGAO, VLR_ORCADO, VLR_LIQUIDADO) 
-                         VALUES (%s, %s, %s, %s, %s)'''
+query = '''INSERT INTO TBL_FATO (FK_TEMPORAL, FK_PROGRAMA, FK_ORGAO, FK_AREA_ATUACAO, VLR_ORCADO, VLR_LIQUIDADO) 
+                         VALUES (%s, %s, %s, %s, %s, %s)'''
 
 cursor.executemany(query, out)
 cnx.commit() 

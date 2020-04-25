@@ -1,10 +1,11 @@
 # Bibliotecas necessárias
-> Versão do Python 3
-> sudo pip3 install mysql-connector-python
-> sudo pip3 install pandas
-> sudo pip3 install matplotlib
+> Versão do Python 3 <br />
+> sudo pip3 install mysql-connector-python <br />
+> sudo pip3 install pandas <br />
+> sudo pip3 install matplotlib <br />
 
-## Altere as seguintes variáveis abaixo, que estão no arquivo file
+## Arquivo file.py
+> Altere as seguintes variáveis abaixo, que estão no arquivo file
 
 ### caminho do arquivo:
 >  corePython/utils/file.py
@@ -12,8 +13,8 @@
 
 ### Variáveis:
 
->  inputFile: [Caminho dos arquivos zips]
->  outputFile: [Caminho onde armazenaremos o extract dos arquivos zips]
+>  inputFile: [Caminho dos arquivos zips] <br />
+>  outputFile: [Caminho onde armazenaremos o extract dos arquivos zips] <br />
 
 
 ### Configuração database

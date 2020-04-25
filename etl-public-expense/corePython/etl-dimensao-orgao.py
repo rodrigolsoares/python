@@ -1,9 +1,9 @@
-import mySqlConn
-import file
-import listUtil
+import utils.mySqlConn as mySqlConn
+import utils.file as file
+import utils.listUtil as listUtil
 import pandas as pd
 
-pathFile = '/home/rodrigo/Documents/university/data-manage-and-information/trabalho etl pandas/csvFile/'
+pathFile = pathFileDespesa = file.pathFileDespesa
 
 print('Create void dataFrame Pandas')
 values = list()
@@ -40,7 +40,7 @@ query = '''INSERT INTO TBL_DIMENSAO_ORGAO (PK_ORGAO, CD_ORGAO_SUPERIOR, NM_ORGAO
 cursor.executemany(query, out)
 cnx.commit() 
 
-print(cursor.rowcount, "linha(s) inserida(s)")
+print(f'Etl dimensão orgão:  {cursor.rowcount} linha(s) inserida(s)')
 
 
 

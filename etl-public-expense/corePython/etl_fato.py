@@ -1,11 +1,11 @@
-import mySqlConn
-import file
-import listUtil
+import utils.mySqlConn as mySqlConn
+import utils.file as file
+import utils.listUtil as listUtil
 import pandas as pd
 
 ano = 2019
-pathFileDespesa = '/home/rodrigo/Documents/university/data-manage-and-information/trabalho etl pandas/csvFile/'
-pathAndFileOrcamento = '/home/rodrigo/Documents/university/data-manage-and-information/trabalho etl pandas/csvFile/2019_OrcamentoDespesa.zip.csv'
+pathFileDespesa = file.pathFileDespesa
+pathAndFileOrcamento = file.pathAndFileOrcamento
 
 def getDimensaoOrgao():
     cnx = mySqlConn.getConnection()
@@ -142,7 +142,8 @@ query = '''INSERT INTO TBL_FATO (FK_TEMPORAL, FK_PROGRAMA, FK_ORGAO, FK_AREA_ATU
 cursor.executemany(query, out)
 cnx.commit() 
 
-print(cursor.rowcount, "linha(s) inserida(s)")
+print(f'Etl Fato:  {cursor.rowcount} linha(s) inserida(s)')
+print(f'Fim do processo')
 
 
 

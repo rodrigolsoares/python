@@ -37,3 +37,4 @@ def geraLista(values):
                 out.append(record)
 
     return out
+    

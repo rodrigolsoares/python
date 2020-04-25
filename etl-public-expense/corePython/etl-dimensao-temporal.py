@@ -1,4 +1,4 @@
-import mySqlConn
+import utils.mySqlConn as mySqlConn
 
 arrayData = list()
 year = 2019
@@ -17,7 +17,7 @@ query = '''INSERT INTO TBL_DIMENSAO_TEMPORAL (PK_TEMPORAL, MES, ANO) VALUES (0, 
 cursor.executemany(query, arrayData)
 cnx.commit() 
 
-print(cursor.rowcount, "linha(s) inserida(s)")
+print(f'Etl dimensão temporal:  {cursor.rowcount} linha(s) inserida(s)')
 
 
 

@@ -1,4 +1,10 @@
-# Bibliotecas necessárias
+# ETL de despesa da governo federal
+
+Este projeto é uma atividade que importa para os arquivos csv adquiridos na portal transparência <br /> 
+do governo federal, e importa no banco o mysql Server utilizando python3 com pandas, e utilizando a <br />
+biblioteca matplotlib gera gráficos do tipo pizza
+
+## Bibliotecas necessárias
 > Versão do Python 3 <br />
 > sudo pip3 install mysql-connector-python <br />
 > sudo pip3 install pandas <br />
